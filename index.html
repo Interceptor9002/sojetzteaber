@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080c09">
+<title>RollerKey</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<style>
+:root{
+  --bg:#080c09; --karte:#111813; --karte2:#16201a; --linie:#1e2b23;
+  --txt:#d9ffe9; --leise:#86a893; --akzent:#22ff7a; --warn:#ffc857; --rot:#ff5c5c; --gruen:#22ff7a;
+  --rad:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);
+  font:15px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+  padding-bottom:96px;overscroll-behavior-y:contain}
+h1{font-size:15px;letter-spacing:.14em;margin:0}
+h2{font-size:11px;letter-spacing:.2em;color:var(--leise);margin:0 0 10px;font-weight:600}
+.kopf{position:sticky;top:0;z-index:20;background:rgba(8,12,9,.95);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--linie);padding:10px 12px}
+.kopf .oben{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.punkt{width:9px;height:9px;border-radius:50%;background:var(--rot);flex:0 0 auto;
+  box-shadow:0 0 0 4px rgba(255,92,92,.14)}
+.punkt.an{background:var(--gruen);box-shadow:0 0 0 4px rgba(34,255,122,.16)}
+main{padding:12px}
+section{background:var(--karte);border:1px solid var(--linie);border-radius:var(--rad);
+  padding:14px;margin:0 0 12px}
+.brands{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+button{font:inherit;font-weight:600;letter-spacing:.06em;color:var(--txt);
+  background:var(--karte2);border:1px solid var(--linie);border-radius:11px;
+  padding:13px 10px;cursor:pointer;min-height:46px}
+button:active{transform:scale(.985)}
+button:disabled{opacity:.42}
+.brands button{padding:11px 4px;font-size:12px}
+.brands button.on{background:var(--akzent);color:#04170b;border-color:var(--akzent)}
+.haupt{background:var(--akzent);color:#04170b;border-color:var(--akzent);font-size:17px;min-height:60px}
+.stop{background:transparent;border-color:var(--rot);color:var(--rot)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wide{grid-column:1/-1}
+.zeile{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 0;border-bottom:1px solid var(--linie)}
+.zeile:last-child{border-bottom:0}
+.zeile b{color:var(--akzent);font-variant-numeric:tabular-nums;flex:0 0 auto}
+input,select{font:inherit;color:var(--txt);background:#0a0f0b;
+  border:1px solid var(--linie);border-radius:10px;padding:11px;width:100%}
+input[type=checkbox]{width:auto;accent-color:var(--akzent);transform:scale(1.25)}
+.sch{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer}
+.stp{display:flex;align-items:stretch;border:1px solid var(--linie);
+  border-radius:11px;overflow:hidden;flex:0 0 auto;background:#0a0f0b}
+.stp button{min-height:42px;width:42px;border:0;border-radius:0;background:transparent;
+  color:var(--akzent);font-size:19px;padding:0}
+.stp input{width:70px;text-align:center;border:0;border-left:1px solid var(--linie);
+  border-right:1px solid var(--linie);border-radius:0;padding:10px 2px;
+  font-variant-numeric:tabular-nums;background:transparent}
+.stp input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.hint{font-size:12px;color:var(--leise);line-height:1.5}
+.hint b{color:var(--warn)}
+hr{border:0;border-top:1px solid var(--linie);margin:14px 0}
+#log{background:#050806;border:1px solid var(--linie);border-radius:11px;
+  padding:10px;height:190px;overflow:auto;font-size:12px;line-height:1.6;white-space:pre-wrap}
+#log div{border-bottom:1px solid #0f1611;padding:1px 0}
+#log .g{color:var(--gruen)} #log .y{color:var(--warn)} #log .r{color:var(--rot)}
+#log .h{color:var(--akzent);font-weight:700}
+#status{position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:#0b110d;border-top:1px solid var(--linie);
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom,0));
+  font-size:12px;color:var(--leise)}
+#status.ok{color:var(--gruen)} #status.warn{color:var(--warn)} #status.err{color:var(--rot)}
+.karte{background:linear-gradient(140deg,#132018,#0b120e);border:1px solid #24382b;
+  border-radius:12px;padding:14px;font-variant-numeric:tabular-nums;letter-spacing:.08em}
+.karte .nr{font-size:19px;margin:10px 0 12px;color:#eafff3}
+.karte .fuss{display:flex;justify-content:space-between;font-size:11px;color:var(--leise)}
+.karte .info{font-size:10px;letter-spacing:.14em;color:var(--leise);margin-top:8px}
+.karte .info.gut{color:var(--gruen)}
+.karte .info.schlecht{color:var(--rot)}
+.marke{font-size:11px;letter-spacing:.24em;color:var(--leise)}
+.badge{display:inline-block;font-size:10px;letter-spacing:.12em;padding:3px 8px;
+  border-radius:6px;background:#16201a;color:var(--leise)}
+.klapp{display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+  font-size:11px;letter-spacing:.2em;color:var(--leise);font-weight:600;margin:0 0 10px}
+.klapp span{font-size:16px;color:var(--akzent);letter-spacing:0}
+.zu{display:none}
+.zu.an{display:block}
+.wahl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.wahl button{padding:9px 4px;font-size:11px;min-height:38px}
+.wahl button.on{background:var(--akzent);color:#04170b;border-color:var(--akzent)}
+.roller{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 0;border-bottom:1px solid var(--linie);font-size:13px}
+.roller b{font-variant-numeric:tabular-nums}
+.roller .klein{font-size:11px;color:var(--leise)}
+.roller button{min-height:38px;padding:0 12px;font-size:11px}
+#video{width:100%;border-radius:12px;background:#000;display:none;margin-top:10px}
+
+#cockpit{position:fixed;inset:0;z-index:60;background:#000;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  transition:opacity .25s;overflow:hidden}
+#cockpit.an{display:flex}
+#cockpit.dim{opacity:.32}
+#cockpit.dim:active{opacity:1}
+#cTempo{font-size:clamp(64px,22vw,130px);font-weight:800;line-height:.88;
+  font-variant-numeric:tabular-nums;letter-spacing:-.03em;transition:color .4s;color:#eafff3}
+#cTempo small{font-size:clamp(14px,4vw,22px);color:var(--leise);font-weight:600;letter-spacing:.1em}
+#cBalken{position:relative;width:min(84vw,320px);height:9px;border-radius:5px;
+  background:#131a15;overflow:hidden;margin-top:10px}
+#cBalken i{display:block;height:100%;width:0;background:var(--akzent);
+  transition:width .3s,background .4s}
+#cBalken u{position:absolute;top:-2px;bottom:-2px;width:2px;background:#7fa88d;opacity:.9}
+#cSkala{width:min(84vw,320px);display:flex;justify-content:space-between;
+  font-size:9px;color:#3c5346;letter-spacing:.08em;margin-top:4px}
+#cLeg{font-size:10px;color:#4c6a58;margin-top:2px;letter-spacing:.12em}
+#cStat{font-size:12px;color:var(--leise);font-variant-numeric:tabular-nums;
+  letter-spacing:.06em;margin-top:6px}
+#cZeit{font-size:clamp(26px,8vw,40px);color:var(--akzent);font-variant-numeric:tabular-nums;letter-spacing:.1em}
+#cRest{font-size:14px;color:var(--leise);font-variant-numeric:tabular-nums}
+#cWeg{font-size:13px;color:var(--leise);font-variant-numeric:tabular-nums}
+#cGraph{width:min(88vw,340px);height:56px;display:block;margin-top:8px}
+#cLeiste{display:flex;gap:8px;margin-top:14px}
+#cLeiste button{min-height:44px;padding:0 16px;font-size:11px;letter-spacing:.12em;
+  background:#0d1410;border-color:#22332a}
+#cLeiste button.on{background:var(--akzent);color:#04170b;border-color:var(--akzent)}
+#cKopf{position:absolute;top:calc(14px + env(safe-area-inset-top,0));left:14px;right:14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+#cUhr{font-size:12px;color:var(--leise);font-variant-numeric:tabular-nums;letter-spacing:.14em}
+#cBatBox{display:flex;align-items:center;gap:7px}
+#cBat{width:52px;height:7px;border:1px solid #26382c;border-radius:3px;overflow:hidden}
+#cBat i{display:block;height:100%;width:0;background:var(--gruen);transition:width .4s,background .4s}
+#cAkkuTxt{font-size:11px;color:var(--leise);font-variant-numeric:tabular-nums}
+#cZu{background:#111a14;border-color:#26382c;width:52px;height:52px;border-radius:50%;padding:0;font-size:18px}
+#cTempel{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom,0));
+  font-size:10px;letter-spacing:.2em;color:#2c4034}
+#cMarke{font-size:10px;letter-spacing:.34em;color:var(--leise);margin-bottom:2px}
+
+#zusammen{position:fixed;inset:0;z-index:70;background:rgba(3,6,4,.97);display:none;
+  flex-direction:column;justify-content:center;padding:26px;gap:2px}
+#zusammen.an{display:flex}
+#zusammen h3{font-size:11px;letter-spacing:.3em;color:var(--akzent);margin:0 0 16px}
+#zusammen .zz{display:flex;justify-content:space-between;padding:9px 0;
+  border-bottom:1px solid var(--linie);font-size:14px}
+#zusammen .zz b{font-variant-numeric:tabular-nums;color:var(--txt)}
+#zusammen .zz.gross b{font-size:20px;color:var(--akzent)}
+#zusammen .grid{margin-top:20px}
+</style>
+</head>
+<body>
+
+<header class="kopf">
+  <div class="oben">
+    <span class="punkt" id="pPunkt"></span>
+    <h1>ROLLERKEY</h1>
+    <span class="badge" id="bMarke">—</span>
+  </div>
+  <div class="brands" id="brands">
+    <button data-b="lime" class="on">LIME</button>
+    <button data-b="voi">VOI</button>
+    <button data-b="bolt">BOLT</button>
+    <button data-b="dott">DOTT</button>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>ROLLER</h2>
+  <div class="zeile"><span>Gerät</span><b id="vGeraet">—</b></div>
+  <div class="zeile"><span>Akku</span><b id="vAkku">—</b></div>
+  <div class="zeile"><span>Tempo</span><b id="vTempo">0,0 km/h</b></div>
+  <div class="zeile"><span>Fahrtzeit</span><b id="vZeit">00:00</b></div>
+  <div class="zeile"><span>Kosten</span><b id="vKosten">0,00 €</b></div>
+  <div class="grid" style="margin-top:12px">
+    <button id="bVerbinden">VERBINDEN</button>
+    <button id="bTrennen">TRENNEN</button>
+    <button class="haupt wide" id="bAuf">ENTSPERREN</button>
+    <button class="wide stop" id="bZu">SPERREN</button>
+    <button id="bCockpit">COCKPIT</button>
+    <button id="bAlarm">PIEPSEN</button>
+  </div>
+  <div class="hint" style="margin-top:10px"><b>Bluetooth kostet nichts und geht ohne Konto.</b> Wenn jemand den Roller bucht: einfach nochmal entsperren.</div>
+</section>
+
+<section>
+  <h2>BUCHEN</h2>
+  <div class="hint">Offizieller Weg. Nur nötig, wenn Bluetooth nicht greift.</div>
+  <div class="grid" style="margin-top:10px">
+    <button class="wide" id="bScan">QR SCANNEN</button>
+    <button id="bScanStop" style="display:none">KAMERA AUS</button>
+    <button class="wide" id="bSuchen">ROLLER IN DER NÄHE</button>
+    <button id="bRent" style="display:none">BUCHEN</button>
+    <button id="bEnde" style="display:none">FAHRT BEENDEN</button>
+  </div>
+  <video id="video" playsinline muted></video>
+  <input id="iQr" placeholder="Code vom Aufkleber" autocapitalize="off" style="margin-top:10px">
+  <button class="wide" id="bQr" style="margin-top:8px">CODE EINLÖSEN</button>
+  <div id="liste"></div>
+</section>
+
+<section>
+  <h2>KARTE</h2>
+  <div class="karte" id="karteBox">
+    <div class="marke" id="kMarke">KEINE KARTE</div>
+    <div class="nr" id="kNummer">•••• •••• •••• ••••</div>
+    <div class="fuss"><span id="kHalter">—</span><span id="kDatum">--/--</span><span id="kCvc">•••</span></div>
+    <div class="info" id="kInfo"></div>
+  </div>
+  <div class="grid" style="margin-top:12px">
+    <button class="wide haupt" id="bKarte">NEUE KARTE</button>
+    <button id="bKopie">KOPIEREN</button>
+    <button id="bCardDel">LÖSCHEN</button>
+    <button id="bBinTausch">BIN TAUSCHEN</button>
+    <input id="iBin" placeholder="eigene BIN, 6 bis 8 Ziffern" inputmode="numeric" maxlength="8">
+    <button id="bBinUse">BIN VERWENDEN</button>
+    <button class="wide" id="bPruef">KARTE PRÜFEN</button>
+    <button class="wide" id="bAnhaengen">AM KONTO ANHÄNGEN</button>
+  </div>
+  <div class="hint" style="margin-top:10px">Prüfen zeigt, ob Stripe die Karte annimmt. Erst prüfen, dann anhängen, dann buchen.</div>
+</section>
+
+<section>
+  <h2>KONTO</h2>
+  <div class="zeile"><span>Sitzung</span><b id="vSitzung">—</b></div>
+  <div class="zeile"><span>Konto</span><b id="vKonto">—</b></div>
+  <div class="zeile"><span>Karte am Konto</span><b id="vAnhang">—</b></div>
+  <div class="grid" style="margin-top:12px">
+    <button class="wide haupt" id="bAbmelden" style="display:none">ABMELDEN</button>
+  </div>
+  <hr>
+  <div class="hint"><b>Für Spurlosigkeit: Wegwerf-Postfach unten.</b> Deine Gmail-Adresse verrät deinen Namen.</div>
+  <input id="iEigen" placeholder="deine.adresse+lime@gmail.com" inputmode="email" autocapitalize="off" style="margin-top:8px">
+  <div class="grid" style="margin-top:8px">
+    <button id="bMail">MAIL ANFORDERN</button>
+    <button id="bDirekt">VON HIER SENDEN</button>
+  </div>
+  <input id="iLink" placeholder="Link aus der Mail einfügen" autocapitalize="off" style="margin-top:8px">
+  <button class="wide" id="bLink" style="margin-top:8px">LINK EINLÖSEN</button>
+  <hr>
+  <div class="hint">SMS-Weg, ohne Postfach</div>
+  <input id="iPhone" placeholder="+49 176 1234567" inputmode="tel" autocapitalize="off" style="margin-top:8px">
+  <div class="grid" style="margin-top:8px">
+    <button id="bSms">CODE SENDEN</button>
+    <button id="bSmsOk">CODE PRÜFEN</button>
+    <input id="iCode" placeholder="6 Ziffern" inputmode="numeric" maxlength="6">
+    <button id="bCodeLeer">FELD LEEREN</button>
+  </div>
+  <hr>
+  <div class="klapp" id="kMailbox">WEGWERF-POSTFACH <span id="mPfeil">+</span></div>
+  <div class="zu" id="mailboxBox">
+    <div class="zeile"><span>Adresse</span><b id="vPost">—</b></div>
+    <div class="grid" style="margin-top:10px">
+      <button id="bPostfach">POSTFACH ANLEGEN</button>
+      <button id="bPostfachWeg">VERWERFEN</button>
+      <button class="wide" id="bWarten">AUF MAIL WARTEN</button>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>EINSTELLUNGEN</h2>
+  <div class="hint" id="sTarif">Tarif kommt vom Anbieter · hier nur dein Deckel</div>
+  <div class="zeile" style="margin-top:8px"><span>Deckel</span><b id="sGrenze">5,00 €</b>
+    <div class="stp"><button data-stp="grenze" data-d="-100">−</button><input id="iGrenze" type="number" inputmode="numeric" min="1" max="50" step="1"><button data-stp="grenze" data-d="100">+</button></div>
+  </div>
+  <div class="zeile"><span>Auto-Sperre</span><b id="sAuto">aus</b></div>
+  <div class="grid">
+    <button id="bAutoMinus">− 5 MIN</button>
+    <button id="bAutoPlus">+ 5 MIN</button>
+  </div>
+  <label class="sch"><input type="checkbox" id="iGps"> GPS-Tempo und Strecke</label>
+  <label class="sch"><input type="checkbox" id="iTon"> Ton und Vibration</label>
+  <label class="sch"><input type="checkbox" id="iBon"> Fahrtschein am Ende</label>
+</section>
+
+<section>
+  <h2>BUS &amp; GENERATION</h2>
+  <div class="hint">Der Erkenner liest den Dienst <b>0x2C00</b>. Liegt er vor, ist es ein Okai-Bus. Sonst läuft der Lime-Rahmen.</div>
+  <div class="wahl" id="wahl">
+    <button data-g="auto" class="on">AUTO</button>
+    <button data-g="lime">LIME-RAHMEN</button>
+    <button data-g="okai">OKAI-AT</button>
+  </div>
+  <div class="zeile" style="margin-top:10px"><span>Tempolimit</span><b id="sTempo">25 km/h</b>
+    <div class="stp"><button data-stp="temp" data-d="-1">−</button><input id="iTemp" type="number" inputmode="numeric" min="5" max="30" step="1"><button data-stp="temp" data-d="1">+</button></div>
+  </div>
+  <div class="grid" style="margin-top:10px">
+    <button id="bTemp">LIMIT SETZEN</button>
+    <button id="bAkku">AKKU ABFRAGEN</button>
+    <button class="wide" id="bSchrot">SCHROTTSCHUSS-TEST</button>
+  </div>
+  <label class="sch"><input type="checkbox" id="iAlle"> an alle schreibbaren Kanäle senden</label>
+  <label class="sch"><input type="checkbox" id="iPing" checked> Verbindung wachhalten</label>
+</section>
+
+<section>
+  <h2>ERWEITERT</h2>
+  <div class="hint"><b>Relay zwingend für die Anmeldung.</b> Ohne Relay gibt es keinen Sitzungscookie.</div>
+  <input id="iRelay" placeholder="https://relay.name.workers.dev/?url=" autocapitalize="off" style="margin-top:8px">
+  <div class="grid" style="margin-top:8px">
+    <button id="bSaveRelay">SPEICHERN</button>
+    <button id="bRelayDel">LÖSCHEN</button>
+    <button class="wide" id="bNet">NETZ TESTEN</button>
+  </div>
+  <button class="wide" id="bCopyW" style="margin-top:8px">WORKER-CODE KOPIEREN</button>
+  <hr>
+  <input id="iPk" placeholder="Stripe-Schlüssel pk_live_…" autocapitalize="off">
+  <button class="wide" id="bPk" style="margin-top:8px">SCHLÜSSEL SUCHEN</button>
+  <hr>
+  <input id="iRoh" placeholder="Rohbefehl, Hex oder ASCII" autocapitalize="off">
+  <button class="wide" id="bRoh" style="margin-top:8px">ROH SENDEN</button>
+  <hr>
+  <div class="grid">
+    <button id="bDiag">DIAGNOSE</button>
+    <button id="bPruefAll">SELBSTPRÜFUNG</button>
+    <button class="wide stop" id="bReset">ALLES ZURÜCKSETZEN</button>
+  </div>
+</section>
+
+<section>
+  <h2>FAHRTENBUCH</h2>
+  <div id="log"></div>
+  <div class="grid" style="margin-top:10px">
+    <button id="bLogKopie">KOPIEREN</button>
+    <button id="bLogLeer">LEEREN</button>
+  </div>
+</section>
+
+</main>
+
+<div id="status">bereit</div>
+
+<div id="cockpit">
+  <div id="cKopf">
+    <div id="cBatBox"><div id="cBat"><i></i></div><span id="cAkkuTxt">—</span></div>
+    <span id="cUhr">--:--</span>
+    <button id="cZu">✕</button>
+  </div>
+  <div id="cMarke">LIME</div>
+  <div id="cTempo">0,0<small> KM/H</small></div>
+  <div id="cBalken"><i></i><u></u></div>
+  <div id="cSkala"><span>0</span><span>10</span><span>20</span><span>30</span></div>
+  <div id="cLeg">LIMIT 25 KM/H</div>
+  <div id="cStat">Ø 0,0 · SPITZE 0,0</div>
+  <canvas id="cGraph" width="340" height="56"></canvas>
+  <div id="cZeit">00:00</div>
+  <div id="cRest">Restzeit —</div>
+  <div id="cWeg">0,00 km · 0,00 €</div>
+  <div id="cLeiste">
+    <button id="cDim">DUNKEL</button>
+    <button id="cLock">SPERREN</button>
+    <button id="cStop">ENDE</button>
+  </div>
+  <div id="cTempel">ANTIPPEN ZUM AUFWECKEN · DOPPELTIPPEN SPERRT</div>
+</div>
+
+<div id="zusammen">
+  <h3>FAHRTSCHEIN</h3>
+  <div class="zz gross"><span>Strecke</span><b id="zWeg">—</b></div>
+  <div class="zz gross"><span>Kosten</span><b id="zKosten">—</b></div>
+  <div class="zz"><span>Dauer</span><b id="zDauer">—</b></div>
+  <div class="zz"><span>Schnitt</span><b id="zSchnitt">—</b></div>
+  <div class="zz"><span>Spitze</span><b id="zSpitze">—</b></div>
+  <div class="zz"><span>Roller</span><b id="zGeraet">—</b></div>
+  <div class="grid">
+    <button id="zKopie">KOPIEREN</button>
+    <button id="zZu">SCHLIESSEN</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const PRE = "rk_";
+const $ = id => document.getElementById(id);
+const lg = (k, d) => { try { const v = localStorage.getItem(PRE + k); return v === null ? d : JSON.parse(v) } catch(_){ return d } };
+const ls = (k, v) => { try { localStorage.setItem(PRE + k, JSON.stringify(v)) } catch(_){} };
+const WARTE = ms => new Promise(r => setTimeout(r, ms));
+const saub = t => String(t == null ? "" : t).replace(/\s+/g, " ").trim().slice(0, 170);
+const eur = c => (c / 100).toFixed(2).replace(".", ",") + " €";
+const BASIS = "https://web-production.lime.bike";
+
+const V = {
+  lime: { name:"LIME", basis: BASIS + "/api/rider", fam:"lime", start:100, min:19 },
+  voi:  { name:"VOI",  basis:"https://api.voiapp.io/v1", fam:"okai", start:100, min:15 },
+  bolt: { name:"BOLT", basis:"https://node.bolt.eu/user/user/v1", fam:"okai", start:100, min:15 },
+  dott: { name:"DOTT", basis:"https://api.dott.eu/v1", fam:"okai", start:100, min:19 }
+};
+
+const S = {
+  brand:"lime", srv:null, chr:null, schreib:[], lesbar:[], geraet:"", dev:null,
+  fam:"—", zwang:"auto",
+  auto:0, gps:false, ton:true, bon:false, grenze:500, temp:25,
+  akku:null, tempo:0, weg:0, maxTempo:0, summeTempo:0, proben:0, letzteFahrt:null, sperrt:false,
+  fahrt:{ an:false, seit:0, timer:0 },
+  karte:null, konto:null, token:"", sitzung:false, anhang:"—",
+  relay:"", pk:"", wach:null, dim:false, post:null, spur:[], ping:0,
+  gefunden:[], gewaehlt:null, gebucht:null, letzteRentId:null, strom:null, suchLauf:0
+};
+
+/* ─────────── Grundgerüst ─────────── */
+
+function log(t, k){
+  const e = $("log"); if (!e) return;
+  const d = document.createElement("div");
+  if (k) d.className = k;
+  d.textContent = new Date().toLocaleTimeString("de-DE", { hour12:false }) + "  " + t;
+  e.appendChild(d);
+  e.scrollTop = e.scrollHeight;
+  while (e.children.length > 500) e.firstChild.remove();
+}
+function stat(t, k){ const e = $("status"); if (e){ e.textContent = t; e.className = k || "" } }
+function tue(id, fn){
+  const e = $(id); if (!e) return;
+  e.addEventListener("click", async () => {
+    try { await fn() }
+    catch(err){ log(String(err.message || err), "r"); stat(String(err.message || err), "err") }
+  });
+}
+
+/* ─────────── Netz ───────────
+   Wege der Reihe nach, tote fliegen kurz raus. 401/403 sperren nur,
+   wenn keine Nutzdaten kommen — sonst wäre ein abgelaufener Token schuld. */
+
+const WEGE = [
+  { n:"corsmirror", f:u => "https://corsmirror.com/v1?url=" + encodeURIComponent(u) },
+  { n:"codetabs",   f:u => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u) },
+  { n:"corsproxy",  f:u => "https://corsproxy.io/?url=" + encodeURIComponent(u) }
+];
+const TOT = {};
+const wegFrei = n => (TOT[n] || 0) < Date.now();
+
+function wegListe(){
+  const l = [];
+  if (S.relay) l.push({ n:"relay", f:u => S.relay + encodeURIComponent(u) });
+  for (const w of WEGE) l.push(w);
+  l.push({ n:"direkt", f:u => u });
+  return l;
+}
+
+const istJson = t => /^\s*[\[{]/.test(String(t || ""));
+
+async function roh(u, opt){
+  opt = opt || {};
+  const meth = opt.method || "GET";
+  let letzte = { ok:false, status:0, text:"kein Weg", json:null };
+  let probiert = 0;
+
+  for (const w of wegListe()){
+    if (!wegFrei(w.n)) continue;
+    probiert++;
+    let r;
+    try {
+      r = await fetch(w.f(u), {
+        method: meth, headers: opt.headers || {},
+        body: meth === "GET" ? undefined : opt.body, redirect:"follow"
+      });
+    } catch(_){
+      TOT[w.n] = Date.now() + (w.n === "direkt" ? 15000 : 60000);
+      letzte = { ok:false, status:0, text:"netz", json:null };
+      continue;
+    }
+    const text = await r.text();
+    let json = null;
+    try { json = JSON.parse(text) } catch(_){}
+
+    const müll = /^\s*<(!doctype|html)/i.test(text);
+    const gesperrt = r.status === 502 || r.status === 521 || müll ||
+      ((r.status === 401 || r.status === 403) && !istJson(text));
+
+    if (gesperrt){
+      TOT[w.n] = Date.now() + 60000;
+      log("Weg " + w.n + " taugt nicht · " + r.status, "y");
+      letzte = { ok:false, status:r.status, text, json };
+      continue;
+    }
+
+    const sid = r.headers.get("x-rk-session");
+    if (sid === "1") S.sitzung = true;
+    if (sid === "0") S.sitzung = false;
+    TOT[w.n] = 0;
+    return { ok:r.ok, status:r.status, text, json };
+  }
+
+  if (!probiert) throw new Error("alle Wege gesperrt · kurz warten");
+  return letzte;
+}
+
+function kopf(json, zusatz){
+  const h = { "accept":"application/json, text/plain, */*", "accept-language":"de-DE,de;q=0.9" };
+  if (json) h["content-type"] = "application/json";
+  if (S.token) h["authorization"] = "Bearer " + S.token;
+  return Object.assign(h, zusatz || {});
+}
+const FORM = { "content-type":"application/x-www-form-urlencoded; charset=utf-8" };
+const relBasis = () => S.relay.split("?")[0];
+
+/* ─────────── Rahmen ─────────── */
+
+function crc16(b){
+  let c = 0;
+  for (const x of b){
+    c ^= x << 8;
+    for (let i = 0; i < 8; i++) c = (c & 0x8000) ? ((c << 1) ^ 0x1021) & 0xffff : (c << 1) & 0xffff;
+  }
+  return c;
+}
+
+function limeNeu(cmd, nutz){
+  nutz = nutz || [];
+  const n = nutz.length, f = new Uint8Array(8 + n);
+  f[0] = 0x46; f[1] = 0x43;
+  f[2] = (cmd >> 8) & 0xff; f[3] = cmd & 0xff;
+  f[4] = (n >> 8) & 0xff; f[5] = n & 0xff;
+  f.set(nutz, 6);
+  const c = crc16(f.subarray(0, 6 + n));
+  f[6 + n] = (c >> 8) & 0xff; f[7 + n] = c & 0xff;
+  return f;
+}
+
+function limeAlt(op, nutz){
+  nutz = nutz || [];
+  const b = [0xfc, op & 0xff, (op >> 8) & 0xff].concat(nutz);
+  let crc = 0xffff;
+  for (const x of b){
+    crc ^= x;
+    for (let i = 0; i < 8; i++) crc = (crc & 1) ? ((crc >> 1) ^ 0xa001) : (crc >> 1);
+  }
+  return new Uint8Array(b.concat([crc & 0xff, (crc >> 8) & 0xff]));
+}
+
+let atSeq = 1;
+const okai = (op, felder) =>
+  "AT+" + op + "=" + (felder || "") + "," + (atSeq++ % 0xffff).toString(16).toUpperCase().padStart(4, "0") + "$\r\n";
+
+function hexLesen(s){
+  const h = String(s || "").replace(/0x/gi, "").replace(/[^0-9a-f]/gi, "");
+  if (!h.length || h.length % 2) throw new Error("Hex ungerade oder leer");
+  const o = new Uint8Array(h.length / 2);
+  for (let i = 0; i < o.length; i++) o[i] = parseInt(h.substr(i * 2, 2), 16);
+  return o;
+}
+const hexText = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(" ").toUpperCase();
+
+/* ─────────── Senden ─────────── */
+
+async function sende(ein){
+  if (!S.chr) throw new Error("kein Schreibkanal");
+  const roh2 = typeof ein === "string" ? new TextEncoder().encode(ein) : ein;
+  const alle = $("iAlle") && $("iAlle").checked;
+  const ziele = alle && S.schreib.length ? S.schreib : [S.chr];
+  log("→ " + (typeof ein === "string" ? ein.replace(/\r\n$/, "") : hexText(roh2)), "h");
+  for (const t of ziele){
+    try {
+      if (t.properties.write && t.writeValueWithResponse) await t.writeValueWithResponse(roh2);
+      else await t.writeValueWithoutResponse(roh2);
+    } catch(e){
+      try { await t.writeValueWithoutResponse(roh2) }
+      catch(_){ throw new Error("Schreiben fehlgeschlagen · " + (e.message || e)) }
+    }
+  }
+}
+
+function familie(){
+  if (S.zwang !== "auto") return S.zwang;
+  if (S.fam === "okai" || S.fam === "lime") return S.fam;
+  return V[S.brand].fam;
+}
+
+async function befehl(art){
+  const f = familie();
+  if (art === "auf"){
+    if (f === "okai"){
+      await sende(okai("OKPWD", "OKAIYLBT")); await WARTE(200);
+      await sende(okai("OKXWM", "0")); await WARTE(200);
+      await sende(okai("OKSCM", "OKAIYLBT,0")); await WARTE(160);
+      await sende(okai("OKSCM", "0"));
+      return;
+    }
+    await sende(limeNeu(0x1661, [0xf1])); await WARTE(160);
+    await sende(limeNeu(0x1114)); await WARTE(160);
+    await sende("unlock\r\n"); await WARTE(140);
+    await sende("unlock");
+    if (S.zwang === "auto"){
+      await WARTE(180);
+      await sende(limeNeu(0x1101, new TextEncoder().encode("LIMELIKE")));
+    }
+    return;
+  }
+  if (art === "zu"){
+    if (f === "okai"){
+      await sende(okai("OKSCM", "OKAIYLBT,1")); await WARTE(160);
+      await sende(okai("OKSCM", "1"));
+      return;
+    }
+    await sende(limeNeu(0x1661, [0xf0])); await WARTE(150);
+    await sende("lock\r\n"); await WARTE(130);
+    await sende("lock");
+    return;
+  }
+  if (art === "piep"){
+    if (f === "okai") await sende(okai("OKECP", "OKAIYLBT,1"));
+    else { await sende(limeNeu(0x1661, [0xf2])); await WARTE(120); await sende("beep") }
+    return;
+  }
+}
+
+/* ─────────── Bluetooth ─────────── */
+
+const DIENSTE = [
+  "00002c00-0000-1000-8000-00805f9b34fb",
+  "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+  "0000ffe0-0000-1000-8000-00805f9b34fb",
+  "0000ffe5-0000-1000-8000-00805f9b34fb",
+  "0000ffe9-0000-1000-8000-00805f9b34fb",
+  "0000fff0-0000-1000-8000-00805f9b34fb",
+  "0000ff00-0000-1000-8000-00805f9b34fb",
+  "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+  "0000fee7-0000-1000-8000-00805f9b34fb",
+  "0000fee9-0000-1000-8000-00805f9b34fb",
+  "0000fe95-0000-1000-8000-00805f9b34fb",
+  "0000fe02-0000-1000-8000-00805f9b34fb"
+];
+
+const kurz = u => String(u).slice(4, 8).toLowerCase();
+
+function meldung(e){
+  const b = new Uint8Array(e.target.value.buffer || e.target.value);
+  const txt = new TextDecoder().decode(b).replace(/[^\x20-\x7e]/g, ".");
+  log("← " + txt, "g");
+
+  let m = txt.match(/OKBCL[^0-9]{0,3}(\d{1,3})/i);
+  if (m) S.akku = Math.min(100, parseInt(m[1], 10));
+  m = txt.match(/OKSCT[^0-9]{0,3}(\d{1,4})/i);
+  if (m && !S.gps) tempoSetzen(parseInt(m[1], 10) / 10);
+  m = txt.match(/OKMLK[^0-9]{0,3}(\d+)/i);
+  if (m){ const km = parseInt(m[1], 10); if (isFinite(km)) S.weg = Math.max(S.weg, km) }
+
+  if (b[0] === 0x46 && b[1] === 0x43 && b.length >= 8){
+    const cmd = (b[2] << 8) | b[3];
+    const nutz = b.subarray(6, b.length - 2);
+    if (cmd === 0x1119 && nutz.length === 1) S.akku = Math.min(100, nutz[0]);
+    if (cmd === 0x111a && nutz.length >= 2) tempoSetzen(((nutz[0] << 8) | nutz[1]) / 10);
+  }
+  paint();
+}
+
+async function verbinden(){
+  if (!navigator.bluetooth) throw new Error("kein Bluetooth im Browser");
+  const geraet = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: DIENSTE });
+  const srv = await geraet.gatt.connect();
+  S.geraet = geraet.name || "Roller";
+  log("verbunden · " + S.geraet, "g");
+
+  let dienste = [];
+  try { dienste = await srv.getPrimaryServices() } catch(_){}
+
+  S.schreib = []; S.lesbar = [];
+  let hatOkai = false, melde = 0;
+  for (const d of dienste){
+    let chr = [];
+    try { chr = await d.getCharacteristics() } catch(_){ continue }
+    if (kurz(d.uuid) === "2c00") hatOkai = true;
+    for (const c of chr){
+      const p = c.properties || {};
+      if (p.read) S.lesbar.push(c);
+      if (p.notify || p.indicate){
+        melde++;
+        c.startNotifications()
+          .then(() => c.addEventListener("characteristicvaluechanged", meldung))
+          .catch(() => {});
+      }
+      if (p.write || p.writeWithoutResponse) S.schreib.push(c);
+    }
+  }
+
+  S.fam = hatOkai ? "okai" : "lime";
+  log("GATT: " + dienste.length + " Dienste · " + S.schreib.length + " schreibbar · " + melde + " meldend", "h");
+
+  const bevorzugt = S.schreib.find(c => kurz(c.uuid) === "2c01");
+  S.chr = bevorzugt || S.schreib[0] || null;
+  if (!S.chr) throw new Error("kein schreibbarer Kanal · anderes Gerät");
+
+  S.srv = srv; S.dev = geraet;
+  geraet.addEventListener("gattserverdisconnected", () => {
+    log("Verbindung weg", "r");
+    S.srv = null; S.chr = null; S.schreib = []; S.lesbar = [];
+    $("pPunkt").classList.remove("an");
+    pingStop(); paint();
+  });
+  $("pPunkt").classList.add("an");
+  paint();
+
+  await WARTE(1200);
+  if ($("iPing").checked) pingStart();
+
+  if (S.fam === "okai"){
+    await sende(okai("OKPWD", "OKAIYLBT")).catch(() => {});
+    await WARTE(250);
+    await sende(okai("OKXWM", "0")).catch(() => {});
+  }
+  stat("verbunden · " + S.geraet, "ok");
+}
+
+function pingStart(){
+  pingStop();
+  S.ping = setInterval(() => {
+    if (!S.srv || !S.srv.connected) return;
+    const r = S.lesbar[0];
+    if (r) r.readValue().catch(() => {});
+  }, 2000);
+}
+function pingStop(){ if (S.ping){ clearInterval(S.ping); S.ping = 0 } }
+
+async function trennen(){
+  pingStop();
+  try { if (S.dev && S.dev.gatt.connected) S.dev.gatt.disconnect() } catch(_){}
+  S.srv = null; S.chr = null; S.schreib = []; S.lesbar = [];
+  $("pPunkt").classList.remove("an");
+  log("getrennt", "y"); paint();
+}
+
+async function entsperren(){
+  if (!S.chr) throw new Error("nicht verbunden");
+  S.tempo = 0; S.weg = 0; S.maxTempo = 0; S.summeTempo = 0; S.proben = 0; S.spur = [];
+  await befehl("auf");
+  fahrtStart();
+  log("entsperrt", "g");
+  stat("entsperrt", "ok");
+  if (S.ton) ton(880, 90);
+}
+
+async function sperren(){
+  if (S.sperrt) return;
+  S.sperrt = true;
+  try { if (S.chr) await befehl("zu") }
+  finally {
+    S.sperrt = false;
+    fahrtStop();
+    log("gesperrt", "y");
+    stat("gesperrt", "ok");
+    if (S.ton) ton(440, 130);
+  }
+}
+
+/* ─────────── QR & Buchung ─────────── */
+
+function orten(){
+  return new Promise((ok, weg) => {
+    if (!navigator.geolocation) return weg(new Error("keine Ortung im Browser"));
+    navigator.geolocation.getCurrentPosition(
+      p => ok({ lat:p.coords.latitude, lon:p.coords.longitude }),
+      e => weg(new Error("Ortung · " + e.message)),
+      { enableHighAccuracy:true, timeout:12000, maximumAge:15000 }
+    );
+  });
+}
+
+function codeAus(text){
+  const t = String(text || "").trim();
+  if (!t) return "";
+  const teile = t.split(/[\/?#&=]/).filter(Boolean).reverse();
+  const kand = teile.find(x => /^[A-Za-z0-9_-]{4,32}$/.test(x));
+  return String(kand || t).toUpperCase().slice(0, 40);
+}
+
+async function rentMit(feld, wert){
+  const wege = [
+    () => roh(BASIS + "/api/rider/v2/views/rent", { method:"POST", headers:kopf(true), body:JSON.stringify({ [feld]: wert }) }),
+    () => roh(BASIS + "/api/rider/v2/views/rent", { method:"POST", headers:kopf(false, FORM), body:feld + "=" + encodeURIComponent(wert) })
+  ];
+  let letzter = 0;
+  for (const w of wege){
+    const r = await w();
+    if (r.ok){
+      const id = r.json && ((r.json.data && r.json.data.id) || r.json.vehicle_id || r.json.id);
+      if (id) S.letzteRentId = id;
+      return true;
+    }
+    letzter = r.status;
+    log("rent " + feld + " · " + r.status + " · " + saub(r.text), "y");
+    if (r.status === 401) throw new Error("Token abgelaufen · neu anmelden");
+    if (r.status === 429) return 429;
+  }
+  return letzter;
+}
+
+async function kette(lauf){
+  const MAXK = 5;
+  const kannAnhaengen = !!S.relay && !!(S.pk || await pkHolen());
+  if (!kannAnhaengen) log("ohne Anhängen · es zählt nur die vorhandene Karte", "y");
+  for (let i = 1; i <= MAXK; i++){
+    if (kannAnhaengen && (!S.karte || i > 1)){
+      S.karte = karteBauen();
+      ls("karte", S.karte); paint();
+      log("Karte " + i + " · " + S.karte.art + " " + S.karte.bin, "h");
+      try { await karteAnhaengen() } catch(e){ log("anhängen: " + e.message, "y") }
+    }
+    const r = await lauf();
+    if (r === true) return true;
+    if (r === 429) throw new Error("gedrosselt · kurz warten, dann nochmal");
+    log("Karte " + i + " abgelehnt", "y");
+  }
+  return false;
+}
+
+async function buchen(){
+  if (!S.token) throw new Error("erst anmelden");
+  if (!S.gewaehlt) throw new Error("erst einen Roller wählen");
+  if (S.gebucht) throw new Error("läuft schon eine Buchung");
+  const id = S.gewaehlt.id;
+  const ok = await kette(() => rentMit("vehicle_id", id));
+  if (ok){ nachBuchung(S.letzteRentId || id); return }
+  throw new Error("fünf Karten abgelehnt · Bluetooth nehmen");
+}
+
+async function qrBuchen(){
+  if (!S.token) throw new Error("erst anmelden");
+  const code = codeAus($("iQr").value);
+  if (!code || code.length < 4) throw new Error("kein brauchbarer Code");
+  log("QR-Code " + code, "h");
+  const ok = await kette(async () => {
+    for (const feld of ["qr_code", "vehicle_id", "code"]){
+      const r = await rentMit(feld, code);
+      if (r === true) return true;
+      if (r === 429) return 429;
+    }
+    return false;
+  });
+  if (ok){ nachBuchung(S.letzteRentId || code); return }
+  throw new Error("Code mit fünf Karten abgelehnt · Bluetooth nehmen");
+}
+
+async function nachBuchung(kennung){
+  S.gebucht = kennung;
+  S.letzteRentId = null;
+  $("bEnde").style.display = "";
+  $("bRent").style.display = "none";
+  log("gebucht · " + kennung, "g");
+  stat("gebucht · Roller gehört dir", "ok");
+  if (S.chr) await befehl("auf").catch(() => {});
+  if (!S.fahrt.an){
+    S.tempo = 0; S.weg = 0; S.maxTempo = 0; S.summeTempo = 0; S.proben = 0; S.spur = [];
+    fahrtStart();
+  }
+}
+
+async function beenden(){
+  if (!S.gebucht) throw new Error("nichts gebucht");
+  const wege = [
+    () => roh(BASIS + "/api/rider/v2/views/end_ride", { method:"POST", headers:kopf(true), body:JSON.stringify({ vehicle_id:S.gebucht }) }),
+    () => roh(BASIS + "/api/rider/v2/views/end_ride", { method:"POST", headers:kopf(false, FORM), body:"vehicle_id=" + encodeURIComponent(S.gebucht) })
+  ];
+  for (const w of wege){
+    const r = await w();
+    if (r.ok){
+      log("Fahrt beendet", "g");
+      S.gebucht = null;
+      $("bEnde").style.display = "none";
+      $("bRent").style.display = S.gewaehlt ? "" : "none";
+      if (S.chr) await befehl("zu").catch(() => {});
+      fahrtStop();
+      stat("Fahrt beendet", "ok");
+      return;
+    }
+    log("beenden · " + r.status + " · " + saub(r.text), "y");
+  }
+  throw new Error("beenden ging nicht · nochmal drücken");
+}
+
+function rollerAus(j){
+  const raus = [], gesehen = new Set();
+  const geh = o => {
+    if (!o || typeof o !== "object") return;
+    if (Array.isArray(o)){ o.forEach(geh); return }
+    if (o.id && o.attributes && (o.attributes.latitude != null || o.attributes.lat != null)){
+      const lat = +(o.attributes.latitude != null ? o.attributes.latitude : o.attributes.lat);
+      const lon = +(o.attributes.longitude != null ? o.attributes.longitude : o.attributes.lng);
+      if (!gesehen.has(o.id) && isFinite(lat) && isFinite(lon)){
+        gesehen.add(o.id);
+        raus.push({ id:o.id, lat, lon,
+          akku: o.attributes.battery_percentage != null ? o.attributes.battery_percentage : null,
+          art: o.attributes.type_name || o.type || "" });
+      }
+    }
+    Object.keys(o).forEach(k => { if (k !== "attributes") geh(o[k]) });
+  };
+  geh(j);
+  return raus;
+}
+
+async function suchen(){
+  if (!S.token) throw new Error("erst anmelden");
+  stat("Ortung …", "warn");
+  const o = await orten();
+  const d = 0.0045;
+  const u = BASIS + "/api/rider/v2/map/bike_pins?ne_lat=" + (o.lat + d) + "&ne_lng=" + (o.lon + d) +
+    "&sw_lat=" + (o.lat - d) + "&sw_lng=" + (o.lon - d) +
+    "&user_latitude=" + o.lat + "&user_longitude=" + o.lon + "&zoom=17";
+  const r = await roh(u, { headers:kopf(false) });
+  if (!r.ok) throw new Error("Karte " + r.status + " · " + saub(r.text));
+  const gef = rollerAus(r.json);
+  gef.forEach(x => { x.weg = Math.round(distanz(o.lat, o.lon, x.lat, x.lon)) });
+  gef.sort((a, b) => a.weg - b.weg);
+  S.gefunden = gef.slice(0, 6);
+  S.gewaehlt = null;
+  listeMalen();
+  log("Roller in der Nähe: " + gef.length, gef.length ? "g" : "y");
+  stat(gef.length ? gef.length + " Roller gefunden" : "keiner in der Nähe", gef.length ? "ok" : "warn");
+}
+
+function listeMalen(){
+  const e = $("liste");
+  e.innerHTML = "";
+  if (!S.gefunden.length){
+    e.innerHTML = '<div class="hint" style="margin-top:10px">nichts gefunden · näher rangehen oder QR scannen</div>';
+    $("bRent").style.display = "none";
+    return;
+  }
+  S.gefunden.forEach(x => {
+    const d = document.createElement("div");
+    d.className = "roller";
+    const links = document.createElement("div");
+    links.innerHTML = "<b>" + (x.art || "Roller") + "</b><div class='klein'>" +
+      (x.weg < 1000 ? x.weg + " m" : (x.weg / 1000).toFixed(1).replace(".", ",") + " km") +
+      (x.akku == null ? "" : " · " + x.akku + " %") + "</div>";
+    const b = document.createElement("button");
+    b.textContent = "WÄHLEN";
+    b.addEventListener("click", () => {
+      S.gewaehlt = x;
+      $("bRent").style.display = "";
+      document.querySelectorAll("#liste .roller").forEach(z => { z.style.opacity = ".45" });
+      d.style.opacity = "1";
+      stat("gewählt · " + (x.art || "Roller") + " in " + x.weg + " m", "warn");
+    });
+    d.appendChild(links);
+    d.appendChild(b);
+    e.appendChild(d);
+  });
+}
+
+async function scan(){
+  if (!("BarcodeDetector" in window)) throw new Error("kein QR-Leser · Code eintippen");
+  const det = new BarcodeDetector({ formats:["qr_code"] });
+  S.strom = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" } });
+  const v = $("video");
+  v.srcObject = S.strom;
+  v.style.display = "block";
+  await v.play();
+  $("bScanStop").style.display = "";
+  S.suchLauf = 1;
+  stat("Kamera läuft · Code ins Bild", "warn");
+  const schleife = async () => {
+    if (!S.suchLauf) return;
+    try {
+      const teile = await det.detect(v);
+      if (teile.length){
+        $("iQr").value = teile[0].rawValue;
+        scanStop();
+        await qrBuchen();
+        return;
+      }
+    } catch(_){}
+    requestAnimationFrame(schleife);
+  };
+  schleife();
+}
+
+function scanStop(){
+  S.suchLauf = 0;
+  if (S.strom){ S.strom.getTracks().forEach(t => t.stop()); S.strom = null }
+  $("video").style.display = "none";
+  $("bScanStop").style.display = "none";
+}
+
+/* ─────────── Fahrt ─────────── */
+
+function tempoSetzen(v){
+  if (!isFinite(v)) v = 0;
+  S.tempo = v;
+  $("vTempo").textContent = v.toFixed(1).replace(".", ",") + " km/h";
+  $("cTempo").innerHTML = v.toFixed(1).replace(".", ",") + "<small> KM/H</small>";
+  balken();
+  if (!S.fahrt.an) return;
+  if (v > S.maxTempo) S.maxTempo = v;
+  S.summeTempo += v; S.proben++;
+  S.spur.push(v);
+  if (S.spur.length > 90) S.spur.shift();
+  graph();
+}
+
+const tarif = () => ({ start: V[S.brand].start, min: V[S.brand].min });
+
+function kosten(){
+  if (!S.fahrt.an) return 0;
+  const t = tarif();
+  return Math.min(S.grenze, t.start + (Date.now() - S.fahrt.seit) / 60000 * t.min);
+}
+
+function fahrtStart(){
+  S.fahrt.an = true; S.fahrt.seit = Date.now();
+  clearInterval(S.fahrt.timer);
+  S.fahrt.timer = setInterval(tick, 1000);
+  gpsStart();
+  paint();
+}
+function fahrtStop(){
+  const lief = S.fahrt.an;
+  const sek = lief ? Math.round((Date.now() - S.fahrt.seit) / 1000) : 0;
+  const betrag = Math.round(kosten());
+  const schnitt = S.proben ? S.summeTempo / S.proben : 0;
+  S.fahrt.an = false;
+  clearInterval(S.fahrt.timer); S.fahrt.timer = 0;
+  gpsStop();
+  wachFrei();
+  cockpitAus();
+  if (lief && sek >= 5 && S.bon) scheinZeigen(sek, betrag, schnitt);
+  paint();
+}
+function tick(){
+  if (!S.fahrt.an) return;
+  const sek = Math.floor((Date.now() - S.fahrt.seit) / 1000);
+  const t = tarif();
+  const rest = Math.max(0, Math.round((S.grenze - t.start) / Math.max(1, t.min) * 60 - sek));
+  $("vZeit").textContent = zeitText(sek);
+  $("vKosten").textContent = eur(Math.round(kosten()));
+  $("cZeit").textContent = zeitText(sek);
+  $("cRest").textContent = "Restzeit " + zeitText(rest);
+  $("cWeg").textContent = (S.weg / 1000).toFixed(2).replace(".", ",") + " km · " + eur(Math.round(kosten()));
+  const schnitt = S.proben ? S.summeTempo / S.proben : 0;
+  $("cStat").textContent = "Ø " + schnitt.toFixed(1).replace(".", ",") + " · SPITZE " + S.maxTempo.toFixed(1).replace(".", ",");
+  if (S.auto > 0 && sek >= S.auto * 60 && S.chr && !S.sperrt) sperren();
+}
+function zeitText(s){
+  const m = Math.floor(s / 60);
+  return String(m).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+function ton(hz, ms){
+  try {
+    const a = new (window.AudioContext || window.webkitAudioContext)();
+    const o = a.createOscillator(), g = a.createGain();
+    o.frequency.value = hz; o.connect(g); g.connect(a.destination);
+    g.gain.value = 0.08; o.start(); o.stop(a.currentTime + ms / 1000);
+    if (navigator.vibrate) navigator.vibrate(ms);
+  } catch(_){}
+}
+
+function balken(){
+  const k = $("cBalken");
+  if (!k) return;
+  const i = k.firstElementChild, u = k.querySelector("u");
+  const p = Math.min(100, Math.max(0, S.tempo / 30 * 100));
+  if (i){
+    i.style.width = p + "%";
+    i.style.background = S.tempo > 24 ? "var(--rot)" : S.tempo > 18 ? "var(--warn)" : "var(--akzent)";
+  }
+  if (u) u.style.left = Math.min(100, Math.max(0, S.temp / 30 * 100)) + "%";
+  const t = $("cTempo");
+  if (t) t.style.color = S.tempo > 24 ? "#ffd2d2" : "#eafff3";
+}
+
+function scheinZeigen(sek, betrag, schnitt){
+  S.letzteFahrt = { weg:S.weg, kosten:betrag, sek, schnitt, spitze:S.maxTempo,
+    geraet:S.geraet, zeit:new Date().toLocaleString("de-DE") };
+  $("zWeg").textContent = (S.weg / 1000).toFixed(2).replace(".", ",") + " km";
+  $("zKosten").textContent = eur(betrag);
+  $("zDauer").textContent = zeitText(sek);
+  $("zSchnitt").textContent = schnitt.toFixed(1).replace(".", ",") + " km/h";
+  $("zSpitze").textContent = S.maxTempo.toFixed(1).replace(".", ",") + " km/h";
+  $("zGeraet").textContent = S.geraet || "—";
+  $("zusammen").classList.add("an");
+}
+
+/* ─────────── GPS ─────────── */
+
+let gpsId = 0, letztePos = null, rohTempo = [];
+
+function gpsStart(){
+  if (!S.gps || gpsId || !navigator.geolocation) return;
+  gpsId = navigator.geolocation.watchPosition(p => {
+    if (p.coords.accuracy > 60) return;
+    let v = p.coords.speed;
+    if (v == null || isNaN(v)){
+      if (letztePos){
+        const dt = (p.timestamp - letztePos.t) / 1000;
+        if (dt > 0.6 && dt < 25){
+          const d = distanz(letztePos.lat, letztePos.lon, p.coords.latitude, p.coords.longitude);
+          v = d / dt; S.weg += d;
+        }
+      }
+    } else if (letztePos){
+      S.weg += distanz(letztePos.lat, letztePos.lon, p.coords.latitude, p.coords.longitude);
+    }
+    letztePos = { lat:p.coords.latitude, lon:p.coords.longitude, t:p.timestamp };
+    if (v == null) return;
+    rohTempo.push(Math.min(45, v * 3.6));
+    if (rohTempo.length > 5) rohTempo.shift();
+    tempoSetzen(rohTempo.reduce((a, b) => a + b, 0) / rohTempo.length);
+  }, () => log("GPS verweigert", "y"), { enableHighAccuracy:true, maximumAge:2000, timeout:12000 });
+}
+function gpsStop(){
+  if (gpsId) navigator.geolocation.clearWatch(gpsId);
+  gpsId = 0; letztePos = null; rohTempo = []; S.tempo = 0;
+}
+function distanz(a, b, c, d){
+  const R = 6371000, rad = x => x * Math.PI / 180;
+  const dLat = rad(c - a), dLon = rad(d - b);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a)) * Math.cos(rad(c)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/* ─────────── Cockpit ─────────── */
+
+function graph(){
+  const c = $("cGraph"); if (!c) return;
+  const x = c.getContext("2d"), b = c.width, h = c.height;
+  x.clearRect(0, 0, b, h);
+  if (S.spur.length < 2) return;
+  const hoch = Math.max(10, ...S.spur);
+  x.beginPath();
+  S.spur.forEach((v, i) => {
+    const px = i / (S.spur.length - 1) * b;
+    const py = h - (v / hoch) * (h - 6) - 3;
+    i ? x.lineTo(px, py) : x.moveTo(px, py);
+  });
+  x.strokeStyle = "#22ff7a"; x.lineWidth = 2; x.lineJoin = "round"; x.stroke();
+  x.lineTo(b, h); x.lineTo(0, h); x.closePath();
+  x.fillStyle = "rgba(34,255,122,.10)"; x.fill();
+}
+
+function uhr(){
+  const e = $("cUhr"); if (!e) return;
+  const d = new Date();
+  e.textContent = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+function akkuZeigen(){
+  const a = S.akku;
+  const t = $("cAkkuTxt"); if (t) t.textContent = a == null ? "—" : a + " %";
+  const k = $("cBat"); if (!k) return;
+  const i = k.firstElementChild; if (!i) return;
+  i.style.width = (a == null ? 0 : Math.max(0, Math.min(100, a))) + "%";
+  i.style.background = a == null ? "#26382c" : a < 15 ? "var(--rot)" : a < 35 ? "var(--warn)" : "var(--gruen)";
+}
+
+async function wachAn(){
+  try { if ("wakeLock" in navigator) S.wach = await navigator.wakeLock.request("screen") }
+  catch(_){ log("Bildschirm bleibt nicht von selbst an", "y") }
+}
+function wachFrei(){ if (S.wach){ try { S.wach.release() } catch(_){}; S.wach = null } }
+
+async function cockpitAn(){
+  $("cockpit").classList.add("an");
+  $("cMarke").textContent = V[S.brand].name;
+  $("cLeg").textContent = "LIMIT " + S.temp + " KM/H";
+  await wachAn(); graph(); uhr(); akkuZeigen(); balken(); tick();
+}
+function cockpitAus(){
+  $("cockpit").classList.remove("an", "dim");
+  S.dim = false; wachFrei();
+}
+
+/* ─────────── Karte ─────────── */
+
+const BIN = [
+  { b:"453201", art:"VISA",       land:"US", gut:true  },
+  { b:"402400", art:"VISA",       land:"US", gut:true  },
+  { b:"471604", art:"VISA",       land:"US", gut:true  },
+  { b:"474487", art:"VISA",       land:"US", gut:true  },
+  { b:"410472", art:"VISA",       land:"US", gut:true  },
+  { b:"430728", art:"VISA",       land:"US", gut:true  },
+  { b:"426684", art:"VISA",       land:"US", gut:true  },
+  { b:"401200", art:"VISA",       land:"US", gut:true  },
+  { b:"541275", art:"MASTERCARD", land:"US", gut:true  },
+  { b:"519133", art:"MASTERCARD", land:"US", gut:true  },
+  { b:"546616", art:"MASTERCARD", land:"US", gut:true  },
+  { b:"515462", art:"MASTERCARD", land:"US", gut:true  },
+  { b:"222300", art:"MASTERCARD", land:"US", gut:true  },
+  { b:"400005", art:"VISA",       land:"US", gut:false },
+  { b:"424242", art:"VISA",       land:"US", gut:false }
+];
+
+function luhn(z){
+  let s = 0, dbl = false;
+  for (let i = z.length - 1; i >= 0; i--){
+    let d = parseInt(z[i], 10);
+    if (dbl){ d *= 2; if (d > 9) d -= 9 }
+    s += d; dbl = !dbl;
+  }
+  return s % 10 === 0;
+}
+const binMeta = b => BIN.find(x => x.b === b) || null;
+
+function karteBauen(bin){
+  const eigen = bin && /^\d{6,8}$/.test(bin) ? bin : "";
+  const bekannt = eigen ? binMeta(eigen.slice(0, 6)) : null;
+  const gut = BIN.filter(x => x.gut);
+  const quelle = bekannt || gut[Math.floor(Math.random() * gut.length)];
+  const stamm = eigen || quelle.b;
+  let nr = stamm;
+  while (nr.length < 15) nr += Math.floor(Math.random() * 10);
+  for (let p = 0; p < 10; p++){ if (luhn(nr + p)){ nr = nr + p; break } }
+  const jz = new Date().getFullYear() + 3 + Math.floor(Math.random() * 3);
+  const monat = 1 + Math.floor(Math.random() * 12);
+  const namen = ["Max Mustermann","Anna Beispiel","Tom Test","Lea Muster","Jan Probe"];
+  return {
+    nummer: nr,
+    bin: nr.slice(0, 6),
+    datum: String(monat).padStart(2, "0") + "/" + String(jz).slice(2),
+    monat: String(monat).padStart(2, "0"),
+    jahr: String(jz),
+    cvc: String(100 + Math.floor(Math.random() * 900)),
+    halter: namen[Math.floor(Math.random() * namen.length)],
+    art: bekannt ? bekannt.art : (stamm[0] === "4" ? "VISA" : "MASTERCARD"),
+    land: bekannt ? bekannt.land : "?",
+    gut: bekannt ? bekannt.gut : null
+  };
+}
+
+function karteZeigen(){
+  const k = S.karte;
+  const info = $("kInfo");
+  if (!k){
+    $("kMarke").textContent = "KEINE KARTE";
+    $("kNummer").textContent = "•••• •••• •••• ••••";
+    $("kHalter").textContent = "—"; $("kDatum").textContent = "--/--"; $("kCvc").textContent = "•••";
+    info.textContent = ""; info.className = "info";
+    return;
+  }
+  $("kMarke").textContent = k.art;
+  $("kNummer").textContent = k.nummer.replace(/(.{4})/g, "$1 ").trim();
+  $("kHalter").textContent = k.halter; $("kDatum").textContent = k.datum; $("kCvc").textContent = k.cvc;
+  const stand = k.gut === true ? " · brauchbar" : k.gut === false ? " · schwach" : " · unbekannt";
+  info.textContent = "BIN " + k.bin + " · " + k.land + stand;
+  info.className = "info " + (k.gut === true ? "gut" : k.gut === false ? "schlecht" : "");
+}
+
+async function kartePruefen(){
+  const k = S.karte;
+  if (!k) throw new Error("keine Karte");
+  log("=== KARTENPRÜFUNG ===", "h");
+  if (!luhn(k.nummer)) throw new Error("Prüfziffer falsch");
+  log("Prüfziffer: stimmt", "g");
+  if (k.nummer.length !== 16) throw new Error("Länge " + k.nummer.length + " · erwartet 16");
+  log("Länge: 16 · in Ordnung", "g");
+  if (k.gut === false) log("BIN ist als schwach markiert · lieber tauschen", "y");
+
+  if (!S.relay){ log("kein Relay · Stripe-Test übersprungen", "y"); log("=== ENDE ===", "h"); return }
+  const pk = await pkHolen();
+  if (!pk){ log("kein Stripe-Schlüssel · Stripe-Test übersprungen", "y"); log("=== ENDE ===", "h"); return }
+
+  const st = await fetch(relBasis() + "?stripe=1", {
+    method:"POST", headers: FORM,
+    body:"card[number]=" + k.nummer + "&card[exp_month]=" + k.monat +
+      "&card[exp_year]=" + k.jahr + "&card[cvc]=" + k.cvc + "&key=" + encodeURIComponent(pk)
+  });
+  const sj = await st.json().catch(() => null);
+  if (sj && sj.id){
+    log("Stripe nimmt die Karte an · " + sj.id.slice(0, 12) + "…", "g");
+    stat("Karte wird angenommen", "ok");
+  } else {
+    log("Stripe lehnt ab: " + saub((sj && sj.error && (sj.error.code || sj.error.message)) || ("HTTP " + st.status)), "r");
+    stat("Stripe lehnt ab", "err");
+  }
+  log("=== ENDE ===", "h");
+}
+
+function binTausch(){
+  const gut = BIN.filter(x => x.gut);
+  const jetzt = S.karte ? S.karte.bin : "";
+  let i = gut.findIndex(x => x.b === jetzt);
+  i = (i + 1) % gut.length;
+  S.karte = karteBauen(gut[i].b);
+  ls("karte", S.karte); paint();
+  log("BIN gewechselt auf " + gut[i].b + " · " + gut[i].art, "h");
+  stat("BIN gewechselt", "ok");
+}
+
+/* ─────────── Postfach ─────────── */
+
+const zufall = n => {
+  const a = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let s = "";
+  for (let i = 0; i < n; i++) s += a[Math.floor(Math.random() * a.length)];
+  return s;
+};
+
+async function mailTm(basis){
+  const d = await roh(basis + "/domains");
+  const liste = (d.json && Array.isArray(d.json["hydra:member"])) ? d.json["hydra:member"].filter(x => x.isActive && !x.isPrivate) : [];
+  if (!liste.length) throw new Error("keine Domäne");
+  const dom = liste[Math.floor(Math.random() * Math.min(3, liste.length))].domain;
+  const adr = zufall(10) + "@" + dom;
+  const pw = zufall(18) + "!A1";
+  const k = await roh(basis + "/accounts", { method:"POST", headers:kopf(true), body:JSON.stringify({ address:adr, password:pw }) });
+  if (!k.ok) throw new Error("Konto " + k.status);
+  const t = await roh(basis + "/token", { method:"POST", headers:kopf(true), body:JSON.stringify({ address:adr, password:pw }) });
+  const tok = t.json && t.json.token;
+  if (!tok) throw new Error("Token " + t.status);
+  return { adr, tok, basis, art:"tm" };
+}
+
+async function guerrilla(){
+  const r = await roh("https://api.guerrillamail.com/ajax.php?f=get_email_address&lang=en&ip=127.0.0.1&agent=rollerkey");
+  if (!r.ok || !r.json || !r.json.email_addr) throw new Error("Postfach " + r.status);
+  return { adr:r.json.email_addr, sid:r.json.sid || r.json.sid_token, art:"gm" };
+}
+
+async function postfachBauen(){
+  for (const f of [() => mailTm("https://api.mail.tm"), () => mailTm("https://api.mail.gw"), guerrilla]){
+    try {
+      const p = await f();
+      S.post = p; ls("post", p);
+      $("vPost").textContent = p.adr;
+      log("Postfach: " + p.adr, "g");
+      return p;
+    } catch(e){ log("Postfachweg: " + (e.message || e), "y") }
+  }
+  throw new Error("kein Postfach");
+}
+
+async function mails(p){
+  if (p.art === "tm"){
+    const r = await roh(p.basis + "/messages", { headers:kopf(false, { authorization:"Bearer " + p.tok }) });
+    return (r.json && r.json["hydra:member"]) || [];
+  }
+  const r = await roh("https://api.guerrillamail.com/ajax.php?f=check_email&seq=0&sid_token=" + p.sid);
+  return (r.json && r.json.list) || [];
+}
+
+async function mailText(p, id){
+  if (p.art === "tm"){
+    const r = await roh(p.basis + "/messages/" + id, { headers:kopf(false, { authorization:"Bearer " + p.tok }) });
+    return ((r.json && r.json.text) || "") + "\n" + ((r.json && r.json.html) || "");
+  }
+  const r = await roh("https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id=" + id + "&sid_token=" + p.sid);
+  return (r.json && r.json.mail_body) || "";
+}
+
+function tokenAus(text){
+  const t = decodeURIComponent(String(text).replace(/&amp;/g, "&"));
+  const raus = [];
+  (t.match(/magic_link_token=([A-Za-z0-9._\-]{16,})/g) || []).forEach(x => raus.push(x.split("=")[1]));
+  (t.match(/eyJ[A-Za-z0-9._\-]{20,}/g) || []).forEach(x => raus.push(x));
+  return [...new Set(raus)].filter(x => x.length >= 20);
+}
+
+/* ─────────── Konto ─────────── */
+
+async function sitzungHolen(){
+  if (!S.relay){ log("kein Relay · Sitzung nicht möglich", "y"); return false }
+  await roh(BASIS + "/");
+  log(S.sitzung ? "Sitzung steht" : "keine Sitzung", S.sitzung ? "g" : "y");
+  return S.sitzung;
+}
+
+async function direktSenden(adr){
+  try {
+    await fetch(BASIS + "/api/rider/v2/onboarding/magic-link", {
+      method:"POST", mode:"no-cors", headers: FORM,
+      body:"email=" + encodeURIComponent(adr) + "&user_agreement_version=4&user_agreement_country_code=DE"
+    });
+    log("Mail von hier gesendet · Antwort nicht lesbar, das ist so", "g");
+    return true;
+  } catch(_){ return false }
+}
+
+async function magicLink(adr){
+  await sitzungHolen();
+  const koerper = "email=" + encodeURIComponent(adr) + "&user_agreement_version=4&user_agreement_country_code=DE";
+  let bester = 0;
+
+  if (await direktSenden(adr)) bester = 1;
+
+  for (let runde = 0; runde < 2; runde++){
+    const r = await roh(BASIS + "/api/rider/v2/onboarding/magic-link", { method:"POST", headers:kopf(false, FORM), body:koerper });
+    if (r.ok){ log("Mail über Relay angefordert", "g"); return true }
+    bester = r.status;
+    log("magic-link · " + r.status + " · " + saub(r.text), "y");
+    if (r.status !== 429) break;
+    const ra = parseInt((r.text || "").match(/\d+/), 10);
+    const warte = ra > 0 && ra < 60 ? ra * 1000 : 6000;
+    log("gedrosselt · warte " + Math.round(warte / 1000) + " s", "y");
+    await WARTE(warte);
+  }
+
+  if (bester === 1 || bester === 429) return true;
+  throw new Error("magic-link " + bester);
+}
+
+function kontoSetzen(daten, adr){
+  S.token = daten.token || "";
+  const u = (daten.user && daten.user.attributes) || {};
+  S.konto = {
+    adr: adr || u.email_address || (S.konto && S.konto.adr) || "",
+    name: u.given_name ? (u.given_name + " " + (u.surname || "")).trim() : "",
+    drin: !!S.token
+  };
+  ls("konto", S.konto); ls("token", S.token);
+  paint();
+}
+
+async function einloesen(tok){
+  const wege = [
+    () => roh(BASIS + "/api/rider/v2/onboarding/login", { method:"POST", headers:kopf(false, FORM), body:"magic_link_token=" + encodeURIComponent(tok) }),
+    () => roh(BASIS + "/api/rider/v2/onboarding/login", { method:"POST", headers:kopf(true), body:JSON.stringify({ magic_link_token:tok }) })
+  ];
+  let letzter = 0;
+  for (const w of wege){
+    const r = await w();
+    if (r.json && r.json.token){ kontoSetzen(r.json, S.konto && S.konto.adr); log("angemeldet", "g"); return true }
+    letzter = r.status;
+    log("login · " + r.status + " · " + saub(r.text), "y");
+  }
+  throw new Error("login " + letzter);
+}
+
+function nummerSauber(v){
+  let s = String(v || "").replace(/[^\d+]/g, "");
+  if (s.indexOf("00") === 0) s = "+" + s.slice(2);
+  else if (s[0] === "0") s = "+49" + s.slice(1);
+  if (s[0] !== "+") s = "+" + s;
+  return s;
+}
+
+async function smsSenden(){
+  const nr = nummerSauber($("iPhone").value);
+  if (nr.length < 8) throw new Error("Nummer zu kurz");
+  const r = await roh(BASIS + "/api/rider/v1/login?phone=" + encodeURIComponent(nr), { headers:kopf(false) });
+  if (!r.ok) throw new Error("SMS " + r.status + " · " + saub(r.text));
+  log("SMS an " + nr + " raus", "g");
+  stat("Code eingeben", "warn");
+  $("iCode").focus();
+}
+
+async function smsPruefen(){
+  const nr = nummerSauber($("iPhone").value);
+  const code = $("iCode").value.replace(/\D/g, "");
+  if (code.length !== 6) throw new Error("6 Ziffern nötig");
+  const r = await roh(BASIS + "/api/rider/v1/login", { method:"POST", headers:kopf(true), body:JSON.stringify({ login_code:code, phone:nr }) });
+  if (!r.json || !r.json.token) throw new Error("Code " + r.status + " · " + saub(r.text));
+  kontoSetzen(r.json, "");
+  log("angemeldet über SMS", "g");
+  stat("angemeldet", "ok");
+}
+
+async function abmelden(){
+  S.token = ""; S.konto = null; S.anhang = "—"; S.gebucht = null;
+  ls("token", ""); ls("konto", null);
+  $("bEnde").style.display = "none";
+  paint(); stat("abgemeldet", "ok");
+}
+
+async function pkHolen(){
+  if (S.pk) return S.pk;
+  if (!S.relay) return "";
+  const r = await roh(relBasis() + "?pk=1");
+  if (r.json && r.json.pk){ S.pk = r.json.pk; $("iPk").value = S.pk; ls("pk", S.pk); return S.pk }
+  return "";
+}
+
+async function karteAnhaengen(){
+  if (!S.token) throw new Error("erst anmelden");
+  if (!S.karte) throw new Error("keine Karte");
+  if (!luhn(S.karte.nummer)) throw new Error("Prüfziffer falsch");
+  if (!S.relay) throw new Error("Relay fehlt");
+  const pk = await pkHolen();
+  if (!pk) throw new Error("kein Stripe-Schlüssel · im Feld eintragen");
+  const st = await fetch(relBasis() + "?stripe=1", {
+    method:"POST", headers: FORM,
+    body:"card[number]=" + S.karte.nummer + "&card[exp_month]=" + S.karte.monat +
+      "&card[exp_year]=" + S.karte.jahr + "&card[cvc]=" + S.karte.cvc + "&key=" + encodeURIComponent(pk)
+  });
+  const sj = await st.json().catch(() => null);
+  if (!sj || !sj.id) throw new Error("Stripe " + st.status + " · " + saub((sj && sj.error && sj.error.message) || ""));
+  log("Stripe-Token " + sj.id.slice(0, 12) + "…", "g");
+  const wege = [
+    () => roh(BASIS + "/api/rider/v2/payment_methods", { method:"POST", headers:kopf(true), body:JSON.stringify({ token:sj.id }) }),
+    () => roh(BASIS + "/api/rider/v2/payment_methods", { method:"POST", headers:kopf(false, FORM), body:"token=" + encodeURIComponent(sj.id) }),
+    () => roh(BASIS + "/api/rider/v1/wallets", { method:"POST", headers:kopf(true), body:JSON.stringify({ token:sj.id }) })
+  ];
+  for (const w of wege){
+    const r = await w();
+    if (r.ok){ S.anhang = "hängt"; paint(); log("Karte am Konto angehängt", "g"); stat("Karte hängt", "ok"); return }
+    log("anhängen · " + r.status + " · " + saub(r.text), "y");
+  }
+  S.anhang = "offen"; paint();
+  throw new Error("Lime hat den Token nicht genommen");
+}
+
+/* ─────────── Malen ─────────── */
+
+function paint(){
+  $("bMarke").textContent = V[S.brand].name;
+  $("vGeraet").textContent = S.geraet || "—";
+  $("vAkku").textContent = S.akku == null ? "—" : S.akku + " %";
+  $("vTempo").textContent = S.tempo.toFixed(1).replace(".", ",") + " km/h";
+  $("vSitzung").textContent = S.sitzung ? "steht" : "fehlt";
+  $("vKonto").textContent = !S.konto ? "—" : S.konto.drin
+    ? (S.konto.name ? S.konto.name + (S.konto.adr ? " · " + S.konto.adr : "") : (S.konto.adr || "angemeldet"))
+    : (S.konto.adr || "offen");
+  $("vAnhang").textContent = S.anhang;
+  $("sAuto").textContent = S.auto > 0 ? S.auto + " min" : "aus";
+  $("sGrenze").textContent = eur(S.grenze);
+  $("sTempo").textContent = S.temp + " km/h";
+  $("sTarif").textContent = V[S.brand].name + " · " + eur(V[S.brand].start) + " + " +
+    eur(V[S.brand].min) + "/min · Deckel " + eur(S.grenze);
+  $("cLeg").textContent = "LIMIT " + S.temp + " KM/H";
+
+  const wach = document.activeElement;
+  if (wach !== $("iGrenze")) $("iGrenze").value = Math.round(S.grenze / 100);
+  if (wach !== $("iTemp")) $("iTemp").value = S.temp;
+
+  $("iGps").checked = S.gps; $("iTon").checked = S.ton; $("iBon").checked = S.bon;
+  $("bAuf").disabled = !S.chr; $("bZu").disabled = !S.chr;
+  $("bAbmelden").style.display = S.token ? "" : "none";
+  document.querySelectorAll("#brands button").forEach(b => b.classList.toggle("on", b.dataset.b === S.brand));
+  document.querySelectorAll("#wahl button").forEach(b => b.classList.toggle("on", b.dataset.g === S.zwang));
+  karteZeigen();
+  akkuZeigen();
+  balken();
+}
+
+/* ─────────── Verdrahtung ─────────── */
+
+document.querySelectorAll("#brands button").forEach(b => b.addEventListener("click", () => {
+  S.brand = b.dataset.b; ls("brand", S.brand);
+  if (S.zwang === "auto") S.fam = V[S.brand].fam;
+  log("Marke: " + V[S.brand].name, "h");
+  paint();
+}));
+
+document.querySelectorAll("#wahl button").forEach(b => b.addEventListener("click", () => {
+  S.zwang = b.dataset.g; ls("zwang", S.zwang);
+  log("Protokoll: " + S.zwang, "h"); paint();
+}));
+
+document.querySelectorAll("[data-stp]").forEach(b => b.addEventListener("click", () => {
+  const f = b.dataset.stp, d = parseInt(b.dataset.d, 10);
+  if (f === "grenze") S.grenze = Math.min(5000, Math.max(100, S.grenze + d));
+  if (f === "temp") S.temp = Math.min(30, Math.max(5, S.temp + d));
+  ls("zahl", { grenze:S.grenze, temp:S.temp });
+  paint();
+}));
+
+["iGrenze","iTemp"].forEach(id => $(id).addEventListener("change", () => {
+  const v = parseInt($(id).value, 10) || 0;
+  if (id === "iGrenze") S.grenze = Math.min(5000, Math.max(100, v * 100));
+  if (id === "iTemp") S.temp = Math.min(30, Math.max(5, v));
+  ls("zahl", { grenze:S.grenze, temp:S.temp });
+  paint();
+}));
+
+tue("iGps", () => { S.gps = $("iGps").checked; ls("gps", S.gps); if (S.gps && S.fahrt.an) gpsStart(); else gpsStop(); paint() });
+tue("iTon", () => { S.ton = $("iTon").checked; ls("ton", S.ton) });
+tue("iBon", () => { S.bon = $("iBon").checked; ls("bon", S.bon) });
+tue("iPing", () => { ls("ping", $("iPing").checked); $("iPing").checked ? pingStart() : pingStop() });
+tue("iAlle", () => ls("alle", $("iAlle").checked));
+tue("bAutoMinus", () => { S.auto = Math.max(0, S.auto - 5); ls("auto", S.auto); paint() });
+tue("bAutoPlus", () => { S.auto = Math.min(120, S.auto + 5); ls("auto", S.auto); paint() });
+
+tue("bVerbinden", verbinden);
+tue("bTrennen", trennen);
+tue("bAuf", entsperren);
+tue("bZu", sperren);
+tue("bCockpit", cockpitAn);
+tue("bAlarm", async () => { if (!S.chr) throw new Error("nicht verbunden"); ton(1200, 200); await befehl("piep"); stat("Pieps", "ok") });
+
+tue("bScan", scan);
+tue("bScanStop", scanStop);
+tue("bSuchen", suchen);
+tue("bRent", buchen);
+tue("bEnde", beenden);
+tue("bQr", qrBuchen);
+
+tue("bTemp", async () => {
+  if (!S.chr) throw new Error("nicht verbunden");
+  if (familie() === "okai") await sende(okai("OKECP", "OKAIYLBT,3," + S.temp));
+  else await sende(limeNeu(0x1663, [0xf1, 0x0d, S.temp]));
+  log("Limit " + S.temp + " km/h", "g");
+  stat("Limit gesetzt", "ok");
+});
+tue("bAkku", async () => {
+  if (!S.chr) throw new Error("nicht verbunden");
+  if (familie() === "okai") await sende(okai("OKBCL", ""));
+  else await sende(limeNeu(0x1663, [0xf2, 0x0b]));
+  stat("Akku abgefragt", "ok");
+});
+tue("bSchrot", async () => {
+  if (!S.chr) throw new Error("nicht verbunden");
+  const formen = [
+    limeNeu(0x1661, [0xf1]), limeNeu(0x1114), "unlock",
+    limeAlt(0x1101, [0x01]), "unlockforever",
+    okai("OKPWD", "OKAIYLBT"), okai("OKSCM", "OKAIYLBT,0"), okai("OKXWM", "0")
+  ];
+  for (const f of formen){ await sende(f).catch(() => {}); await WARTE(350) }
+  stat("Schrottschuss durch", "ok");
+});
+tue("bRoh", async () => {
+  if (!S.chr) throw new Error("nicht verbunden");
+  const t = $("iRoh").value.trim();
+  if (!t) throw new Error("nichts eingegeben");
+  await sende(/^[0-9a-f\s]+$/i.test(t) && t.indexOf(" ") > 0 ? hexLesen(t) : t);
+  stat("roh gesendet", "ok");
+});
+
+tue("bKarte", () => {
+  S.karte = karteBauen($("iBin").value.trim());
+  ls("karte", S.karte); paint();
+  log("Karte erzeugt · " + S.karte.art + " •••• " + S.karte.nummer.slice(-4), "g");
+  stat("Karte bereit", "ok");
+});
+tue("bKopie", async () => {
+  if (!S.karte) throw new Error("keine Karte");
+  await navigator.clipboard.writeText(S.karte.nummer + "\n" + S.karte.datum + "\n" + S.karte.cvc + "\n" + S.karte.halter);
+  stat("kopiert", "ok");
+});
+tue("bCardDel", () => { S.karte = null; ls("karte", null); paint(); stat("Karte gelöscht", "ok") });
+tue("bBinUse", () => {
+  const b = $("iBin").value.trim();
+  if (!/^\d{6,8}$/.test(b)) throw new Error("6 bis 8 Ziffern");
+  S.karte = karteBauen(b); ls("karte", S.karte); paint(); stat("BIN übernommen", "ok");
+});
+tue("bPruef", kartePruefen);
+tue("bBinTausch", binTausch);
+tue("bAnhaengen", karteAnhaengen);
+
+tue("bMail", async () => {
+  const a = $("iEigen").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(a)) throw new Error("Adresse sieht falsch aus");
+  S.konto = { adr:a, drin: !!S.token }; ls("konto", S.konto); paint();
+  stat("Mail wird angefordert …", "warn");
+  await magicLink(a);
+  stat("Mail raus · Link einfügen oder WARTEN", "ok");
+});
+tue("bDirekt", async () => {
+  const a = $("iEigen").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(a)) throw new Error("Adresse sieht falsch aus");
+  S.konto = { adr:a, drin: !!S.token }; ls("konto", S.konto); paint();
+  if (!await direktSenden(a)) throw new Error("direkt fehlgeschlagen");
+  stat("von hier gesendet", "ok");
+});
+tue("bLink", async () => {
+  const tok = tokenAus($("iLink").value);
+  if (!tok.length) throw new Error("kein Token erkannt");
+  await einloesen(tok[0]);
+  stat("angemeldet", "ok");
+});
+tue("bSms", smsSenden);
+tue("bSmsOk", smsPruefen);
+tue("bCodeLeer", () => { $("iCode").value = "" });
+tue("bAbmelden", abmelden);
+
+tue("kMailbox", () => {
+  const b = $("mailboxBox");
+  b.classList.toggle("an");
+  $("mPfeil").textContent = b.classList.contains("an") ? "−" : "+";
+});
+tue("bPostfach", async () => { await postfachBauen(); stat("Postfach bereit", "ok") });
+tue("bPostfachWeg", () => { S.post = null; ls("post", null); $("vPost").textContent = "—"; stat("verworfen", "ok") });
+tue("bWarten", async () => {
+  if (!S.post) throw new Error("kein Postfach");
+  stat("warte auf Mail …", "warn");
+  const ende = Date.now() + 120000;
+  while (Date.now() < ende){
+    for (const m of await mails(S.post)){
+      const tok = tokenAus(await mailText(S.post, m.id || m.mail_id));
+      for (const t of tok.slice(0, 3)){
+        try { if (await einloesen(t)){ stat("angemeldet", "ok"); return } } catch(_){}
+      }
+    }
+    await WARTE(3500);
+  }
+  throw new Error("kein Link in 2 min");
+});
+
+tue("bLogKopie", async () => { await navigator.clipboard.writeText($("log").innerText); stat("kopiert", "ok") });
+tue("bLogLeer", () => { $("log").innerHTML = ""; stat("geleert", "ok") });
+
+tue("bSaveRelay", () => {
+  let v = $("iRelay").value.trim();
+  if (!/^https:\/\//.test(v)) throw new Error("muss mit https:// beginnen");
+  if (v.indexOf("?") < 0) v += "?url=";
+  S.relay = v; ls("relay", v); $("iRelay").value = v;
+  stat("Relay gespeichert", "ok");
+});
+tue("bRelayDel", () => { S.relay = ""; ls("relay", ""); $("iRelay").value = ""; stat("Relay gelöscht", "ok") });
+tue("bCopyW", async () => {
+  const r = await fetch("worker.js");
+  if (!r.ok) throw new Error("worker.js nicht im Repo");
+  await navigator.clipboard.writeText(await r.text());
+  stat("Worker-Code kopiert", "ok");
+});
+tue("bPk", async () => {
+  if (!S.relay) throw new Error("Relay fehlt");
+  const pk = await pkHolen();
+  if (!pk) throw new Error("nichts gefunden · Feld nutzen");
+  stat("Schlüssel gefunden", "ok");
+});
+
+tue("bNet", async () => {
+  log("=== NETZTEST ===", "h");
+  if (!S.relay){ log("kein Relay gesetzt", "y"); stat("Relay fehlt", "err"); return }
+  const w = await roh(BASIS + "/");
+  log("Wurzel: " + w.status + " · Sitzung " + (S.sitzung ? "steht" : "fehlt"), S.sitzung ? "g" : "r");
+  const m = await roh(BASIS + "/api/rider/v2/onboarding/magic-link", { method:"POST", headers:kopf(false, FORM),
+    body:"email=probe" + zufall(6) + "@example.com&user_agreement_version=4&user_agreement_country_code=DE" });
+  log("magic-link: " + m.status + " · " + saub(m.text), m.ok ? "g" : "y");
+  const pk = await pkHolen();
+  log("Stripe-Schlüssel: " + (pk ? "gefunden" : "keiner"), pk ? "g" : "y");
+  log("=== ENDE ===", "h");
+  stat(m.ok ? "magic-link geht durch" : (m.status === 429 ? "gedrosselt" : "magic-link " + m.status),
+    m.ok ? "ok" : (m.status === 429 ? "err" : "warn"));
+});
+
+const PFLICHT = ["pPunkt","bMarke","brands","vGeraet","vAkku","vTempo","vZeit","vKosten",
+  "bVerbinden","bTrennen","bAuf","bZu","bCockpit","bAlarm","bScan","bScanStop","bSuchen","bRent",
+  "bEnde","video","iQr","bQr","liste","karteBox","kNummer","kMarke","kInfo","bKarte","bKopie",
+  "bCardDel","bBinTausch","iBin","bBinUse","bPruef","bAnhaengen","vSitzung","vKonto","vAnhang",
+  "bAbmelden","iEigen","bMail","bDirekt","iLink","bLink","iPhone","bSms","bSmsOk","iCode",
+  "bCodeLeer","kMailbox","mailboxBox","vPost","bPostfach","bPostfachWeg","bWarten","log","bLogKopie",
+  "bLogLeer","iGrenze","iTemp","sGrenze","sTempo","sTarif","sAuto","bAutoMinus","bAutoPlus","iGps",
+  "iTon","iBon","iAlle","iPing","wahl","bTemp","bAkku","bSchrot","iRelay","bSaveRelay","bRelayDel",
+  "bNet","bCopyW","iPk","bPk","iRoh","bRoh","bDiag","bPruefAll","bReset","status","cockpit","cTempo",
+  "cZeit","cRest","cWeg","cZu","cGraph","cKopf","cBat","cBatBox","cAkkuTxt","cUhr","cBalken","cSkala",
+  "cLeg","cStat","cMarke","cDim","cLock","cStop","cLeiste","cTempel","zusammen","zWeg","zKosten",
+  "zDauer","zSchnitt","zSpitze","zGeraet","zKopie","zZu"];
+
+tue("bPruefAll", () => {
+  const fehlt = PFLICHT.filter(id => !$(id));
+  const pr = hexText(limeNeu(0x1114));
+  const pr2 = hexText(limeNeu(0x1661, [0xf1]));
+  const balkenOk = !!($("cBalken") && $("cBalken").firstElementChild && $("cBalken").querySelector("u"));
+  const karteOk = !S.karte || (luhn(S.karte.nummer) && S.karte.nummer.length === 16);
+  log("=== SELBSTPRÜFUNG ===", "h");
+  log("Elemente: " + (PFLICHT.length - fehlt.length) + "/" + PFLICHT.length, fehlt.length ? "r" : "g");
+  if (fehlt.length) log("fehlt: " + fehlt.join(", "), "r");
+  log("Balken-Aufbau: " + (balkenOk ? "ok" : "kaputt"), balkenOk ? "g" : "r");
+  log("Karte gültig: " + (karteOk ? "ja" : "nein"), karteOk ? "g" : "r");
+  log("Rahmen 1114: " + (pr === "46 43 11 14 00 00 EA FB" ? "stimmt" : "FALSCH " + pr),
+    pr === "46 43 11 14 00 00 EA FB" ? "g" : "r");
+  log("Rahmen 1661: " + (pr2 === "46 43 16 61 00 01 F1 F2 8F" ? "stimmt" : "FALSCH " + pr2),
+    pr2 === "46 43 16 61 00 01 F1 F2 8F" ? "g" : "r");
+  log("Codeauszug: " + codeAus("https://lime.bike/scooter/AB12CD34?x=1"), "h");
+  log("Bluetooth: " + (navigator.bluetooth ? "ja" : "nein"), navigator.bluetooth ? "g" : "y");
+  log("QR-Leser: " + ("BarcodeDetector" in window ? "ja" : "nein"), ("BarcodeDetector" in window) ? "g" : "y");
+  log("Relay: " + (S.relay ? "gesetzt" : "fehlt"), S.relay ? "g" : "y");
+  log("=== ENDE ===", "h");
+  stat(fehlt.length || !balkenOk ? "Lücken gefunden" : "alles vorhanden",
+    fehlt.length || !balkenOk ? "warn" : "ok");
+});
+
+tue("bDiag", async () => {
+  log("=== DIAGNOSE ===", "h");
+  log("Marke: " + S.brand + " · erwartet " + V[S.brand].fam);
+  log("Bluetooth: " + (navigator.bluetooth ? "ja" : "nein"));
+  log("Familie: " + S.fam + " · Zwang: " + S.zwang);
+  log("Kanal: " + (S.chr ? S.chr.uuid : "keiner"));
+  log("Schreibbar: " + S.schreib.length + " · lesbar: " + S.lesbar.length);
+  log("Gebucht: " + (S.gebucht || "nein"));
+  log("Relay: " + (S.relay ? "gesetzt" : "fehlt"), S.relay ? "g" : "y");
+  log("Sitzung: " + (S.sitzung ? "steht" : "fehlt"), S.sitzung ? "g" : "y");
+  log("Token: " + (S.token ? "vorhanden" : "keiner"), S.token ? "g" : "y");
+  log("=== ENDE ===", "h");
+});
+
+tue("bReset", () => {
+  Object.keys(localStorage).filter(k => k.indexOf(PRE) === 0).forEach(k => localStorage.removeItem(k));
+  location.reload();
+});
+
+/* Cockpit */
+
+let stille = 0, letzterTipp = 0;
+
+$("cZu").addEventListener("click", e => { e.stopPropagation(); cockpitAus() });
+$("cDim").addEventListener("click", e => {
+  e.stopPropagation();
+  S.dim = !S.dim;
+  $("cockpit").classList.toggle("dim", S.dim);
+  $("cDim").classList.toggle("on", S.dim);
+  stille = 0;
+});
+$("cLock").addEventListener("click", e => { e.stopPropagation(); sperren() });
+$("cStop").addEventListener("click", e => { e.stopPropagation(); cockpitAus() });
+
+$("cockpit").addEventListener("click", e => {
+  if (e.target.closest("button")) return;
+  stille = 0;
+  const jetzt = Date.now();
+  if (jetzt - letzterTipp < 320){ sperren(); letzterTipp = 0; return }
+  letzterTipp = jetzt;
+  if (S.dim){ S.dim = false; $("cockpit").classList.remove("dim"); $("cDim").classList.remove("on") }
+});
+$("cockpit").addEventListener("touchstart", () => { stille = 0 }, { passive:true });
+
+setInterval(() => {
+  if (!$("cockpit").classList.contains("an")) return;
+  stille++;
+  if (stille > 20 && !S.dim){ S.dim = true; $("cockpit").classList.add("dim"); $("cDim").classList.add("on"); stille = 0 }
+}, 1000);
+setInterval(() => { uhr(); akkuZeigen() }, 15000);
+
+tue("zZu", () => $("zusammen").classList.remove("an"));
+tue("zKopie", async () => {
+  const f = S.letzteFahrt;
+  if (!f) throw new Error("keine Fahrt");
+  await navigator.clipboard.writeText(
+    "Fahrt " + f.zeit + "\n" + f.geraet + "\n" +
+    (f.weg / 1000).toFixed(2).replace(".", ",") + " km in " + zeitText(f.sek) + "\n" +
+    "Schnitt " + f.schnitt.toFixed(1).replace(".", ",") + " km/h · Spitze " + f.spitze.toFixed(1).replace(".", ",") + " km/h\n" +
+    eur(f.kosten)
+  );
+  stat("Fahrtschein kopiert", "ok");
+});
+
+/* ─────────── Start ─────────── */
+
+(function start(){
+  S.brand = lg("brand", "lime");
+  if (!V[S.brand]) S.brand = "lime";
+  const z = lg("zahl", {}) || {};
+  S.grenze = Math.min(5000, Math.max(100, z.grenze || 500));
+  S.temp = Math.min(30, Math.max(5, z.temp == null ? 25 : z.temp));
+  S.auto = lg("auto", 0) || 0;
+  S.gps = !!lg("gps", false);
+  S.ton = lg("ton", true) !== false;
+  S.bon = !!lg("bon", false);
+  S.zwang = lg("zwang", "auto") || "auto";
+  S.karte = lg("karte", null);
+  S.konto = lg("konto", null);
+  S.token = lg("token", "") || "";
+  S.relay = lg("relay", "") || "";
+  S.pk = lg("pk", "") || "";
+  S.post = lg("post", null);
+  $("iRelay").value = S.relay;
+  $("iPk").value = S.pk;
+  $("iAlle").checked = !!lg("alle", false);
+  $("iPing").checked = lg("ping", true) !== false;
+  if (S.konto && S.konto.adr) $("iEigen").value = S.konto.adr;
+  if (S.post && S.post.adr) $("vPost").textContent = S.post.adr;
+  paint(); uhr(); akkuZeigen(); balken();
+  log("bereit · " + V[S.brand].name, "g");
+  stat(S.relay ? "bereit" : "Relay fehlt · Anmeldung braucht ihn", S.relay ? "ok" : "warn");
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
+</body>
+</html>
